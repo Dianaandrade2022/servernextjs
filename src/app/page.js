@@ -1,95 +1,121 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { Stack, TextField, Typography, Button } from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import { v4 as uuidv4 } from "uuid";
+const socket = io("http://localhost:9001");
+import {es} from 'date-fns/locale'
+import { formatRelative, subDays } from "date-fns";
 
 export default function Home() {
+  const [message, setMessage] = useState("");
+
+  // no se actualizará el estado por lo cual se elimina setId
+  const [id] = useState(uuidv4());
+  const [listmessage, setListMessage] = useState([]);
+  const [fecha ] = useState([]);
+  
+  function handleclick() {
+    const fecha =  formatRelative(subDays(new Date(), 0), new Date(), { locale: es })
+    console.log(fecha);
+    const text = message;
+    socket.emit("newMessage", {
+      id,
+      message: text,
+      fechamessage:fecha
+    });
+    setMessage("");
+  } 
+
+  useEffect(() => {
+    socket.on("messages", (data) => {
+      setListMessage((prevListMessages) =>
+        prevListMessages.concat(data)
+      );
+    });
+  }, []);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <Stack
+      sx={{
+        height: "100%",
+      }}
+    >
+      <Stack
+        sx={{
+          backgroundColor: "#EB1700",
+          height: "60px",
+          justifyContent: "center",
+          alignItems: "center",
+          flexShrink: 0,
+        }}
+        direction="row"
+      >
+        <Typography 
+        sx={{
+          color:"#fff",
+          fontWeight:"bold",
+          fontSize:"20px"
+        }}
+        >Chat Online</Typography>
+        
+      </Stack>
+
+      <Stack
+        sx={{
+          backgroundColor: "#000",
+          flexGrow: 1,
+          paddingBlock: "10px",
+        }}
+        spacing={2}
+      >
+        {listmessage.map((item) => (
+          <Stack
+            sx={{
+              maxWidth: "60%",
+              minHeight: "30px",
+              backgroundColor: "white",
+              borderRadius: "15px",
+              alignSelf: item.id === id ? "end" : "start",
+              p: 1,
+            }}
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+            <Typography>{item.message}</Typography>
+            <Typography
+            sx={{
+              alignSelf:"end",
+              color:"gray",
+              fontSize:9
+            }}
+            >{item.fechamessage}</Typography>
+          </Stack>
+        ))}
+      </Stack>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      <Stack
+        sx={{  
+          height: "60px",
+          alignItems: "center",
+        }}
+        direction="row"
+        spacing={2}
+      >
+        <TextField
+          variant="standard"
+          fullWidth
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+        ></TextField>
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Button
+          variant="contained"
+          endIcon={<SendIcon />}
+          onClick={handleclick}
         >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+          send
+        </Button>
+      </Stack>
+    </Stack>
   );
 }
