@@ -42,24 +42,28 @@ export default function Home() {
       }
 
       const data = await res.json();
-      
-  
-      console.log(data.url);
-      console.log(data);
+      setImage(data.url);
 
+      socket.emit("newMessage", {
+        id,
+        message: message || "",
+        fechamessage: formatRelative(subDays(new Date(), 0), new Date(), {
+          locale: es,
+        }),
+        archivo: data.url,
+      });
+    } else {
+      const fecha = formatRelative(subDays(new Date(), 0), new Date(), {
+        locale: es,
+      });
+
+      socket.emit("newMessage", {
+        id,
+        message: message || "",
+        fechamessage: fecha,
+        archivo: null,
+      });
     }
-
-    const fecha = formatRelative(subDays(new Date(), 0), new Date(), {
-      locale: es,
-    });
-
-
-    socket.emit("newMessage", {
-      id,
-      message: message || "",
-      fechamessage: fecha,
-      archivo: image ? image : null,
-    });
 
     setMessage("");
     setFile(null);
@@ -69,18 +73,15 @@ export default function Home() {
   function getFile(e) {
     const data = e.target.files[0];
     setFile(data);
-    setImage(image)
     setError(null);
   }
 
   useEffect(() => {
     socket.on("messages", (data) => {
       setListMessage((prevListMessages) => prevListMessages.concat(data));
-      setImage(data.url);  
-      console.log("desde useeffect",data.url);
-      console.log("desde useeffect",data);
+      setImage(data.url);
+      console.log("desde useEffect", data.url);
     });
-    
   }, []);
 
   return (
@@ -136,13 +137,17 @@ export default function Home() {
               <img
                 src={item.archivo}
                 alt="Uploaded"
-                style={{ maxWidth: "100%", maxHeight: "300px", marginTop: "10px" }}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginTop: "10px",
+                }}
               />
             )}
             <Typography
               sx={{
                 alignSelf: "end",
-                color: item.message ? "gray":"black",
+                color: item.message ? "gray" : "black",
                 fontSize: 9,
               }}
             >
